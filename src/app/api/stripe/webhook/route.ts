@@ -1,7 +1,6 @@
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/server/clients";
-import { recordPaidOrder } from "@/lib/server/orders";
-import { syncSellerAccount } from "@/lib/server/sellers";
+import { handleStripeEvent } from "@/lib/server/events";
 
 /**
  * Receives Connect events. Payments are direct charges on sellers' accounts, so the
@@ -23,15 +22,7 @@ export async function POST(request: Request) {
     return new Response("Invalid signature", { status: 400 });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed":
-      if (event.account) await recordPaidOrder(event.data.object, event.account);
-      break;
-    case "account.updated":
-      await syncSellerAccount(event.data.object);
-      break;
-  }
-
-  // Errors above return 500 automatically, so Stripe retries the event later.
+  // A thrown error returns 500, so Stripe retries the event later.
+  await handleStripeEvent(event, event.account);
   return Response.json({ received: true });
 }

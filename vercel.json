@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "src/app/api/stripe/reconcile/route.ts": {
+      "experimentalTriggers": [{ "type": "schedule/v1beta" }]
+    }
+  },
+  "schedules": {
+    "stripe-reconcile": {
+      "schedule": "*/15 * * * *",
+      "function": "api/stripe/reconcile"
+    }
+  }
+}

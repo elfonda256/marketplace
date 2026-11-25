@@ -21,6 +21,7 @@ No login is needed. Anyone can post a listing with a photo, browse and search li
 2. Stripe sends the seller back to `/sell/return`, which reads the account from Stripe and saves `charges_enabled`. The `account.updated` webhook keeps it in sync afterwards.
 3. On a listing page, the server checks the listing and its seller. If the seller can accept payments, **Buy Now** creates a Checkout Session on the seller's account with `application_fee_amount` set to 10%.
 4. After payment, `checkout.session.completed` arrives at `/api/stripe/webhook`. The handler verifies the signature, inserts the order and marks the listing as sold. The success page records the same session too, so the buyer never sees a confirmation for an order that isn't saved yet. The unique session id makes both writes safe to repeat.
+5. As a fallback for webhooks that never arrive, a private scheduled function (`/api/stripe/reconcile`, every 15 minutes via Vercel Schedules) lists the last two hours of Stripe events on each seller's account and passes them to the same handler. A payment is still recorded if the buyer closes the tab before the success page and the webhook is missed.
 
 ## Getting started
 
@@ -56,7 +57,7 @@ src/
 │   ├── item/[id]/                # Listing page, not-found page, buyNow server action
 │   ├── sell/                     # Connect with Stripe page, return page, refresh route, server action
 │   ├── orders/success/page.tsx   # Order confirmation
-│   └── api/stripe/webhook/       # Stripe webhook
+│   └── api/stripe/               # webhook/ (push) and reconcile/ (scheduled pull)
 ├── components/
 │   ├── BrowseListings.tsx        # Server component: reads filters, fetches, renders grid
 │   ├── ListingDetail.tsx         # Server component: one listing
@@ -71,10 +72,11 @@ src/
     ├── listings.ts               # Public Supabase queries and uploads
     ├── supabase.ts               # Public Supabase client
     ├── server/                   # Server-only: Stripe and secret-key Supabase clients,
-    │                             # sellers and orders
+    │                             # sellers, orders and the shared Stripe event handler
     └── *.test.ts                 # Unit tests for the pure modules
 scripts/
 └── create-webhook.mjs            # Registers the Connect webhook endpoint
+vercel.json                       # Schedule for the reconcile function
 supabase/
 └── schema.sql
 ```
@@ -86,6 +88,7 @@ supabase/
 - **The server decides what can be bought.** `purchaseState` (unit tested) combines listing status, price and seller status. The Buy Now server action checks it again, so a hidden or stale button can't create a payment.
 - **Idempotent order recording.** `stripe_checkout_session_id` is unique and the insert ignores duplicates, so webhook retries and the success page can't create a second order. Marking as sold only updates `available` listings.
 - **Shared sandbox.** The webhook also receives other apps' events. An order is only recorded when the session's listing exists here and the paying account is that listing's seller. Anything else is acknowledged with 200 and ignored.
+- **Push and pull share one handler.** `handleStripeEvent` is the only code that acts on Stripe events. The webhook pushes events to it, and the scheduled reconcile job pulls them from the Events API, so a missed webhook delays an order by minutes instead of losing it.
 - **Verified webhooks.** The handler reads the raw body and checks the Stripe signature before trusting any event.
 - **Earlier decisions:** server components for reading, filters in the URL, database check constraints mirroring form validation, write-only messages, and photos stored as storage paths rather than URLs.
 - **Known limits.** Without login, a seller is identified only by email. An email that is already fully connected never gets a new onboarding link, but a production version would verify email ownership first. Listings can't be edited from the site, and there is no spam protection.
