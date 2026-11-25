@@ -62,3 +62,42 @@ create policy "Anyone can upload listing images"
   on storage.objects for insert
   to anon, authenticated
   with check (bucket_id = 'listing-images');
+
+-- ---------------------------------------------------------------------------
+-- Test 4: Stripe Connect
+-- ---------------------------------------------------------------------------
+
+-- Sellers who connected Stripe, identified by the email on their listings.
+create table public.sellers (
+  email text primary key
+    check (char_length(email) <= 254 and email = lower(email) and email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  stripe_account_id text not null unique check (stripe_account_id ~ '^acct_'),
+  charges_enabled boolean not null default false,
+  details_submitted boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- One row per paid Checkout Session. The unique session id makes recording idempotent,
+-- so the webhook and the success page can both record the same payment safely.
+create table public.orders (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.listings (id) on delete restrict,
+  stripe_checkout_session_id text not null unique,
+  stripe_account_id text not null,
+  amount_total integer not null check (amount_total > 0),
+  application_fee integer not null check (application_fee >= 0),
+  currency text not null,
+  buyer_email text,
+  created_at timestamptz not null default now()
+);
+
+create index orders_listing_id_idx on public.orders (listing_id);
+
+alter table public.listings
+  add column status text not null default 'available' check (status in ('available', 'sold')),
+  add column sold_at timestamptz;
+
+-- RLS on with no policies: only the server, using the secret key, can read or write these.
+alter table public.sellers enable row level security;
+alter table public.orders enable row level security;

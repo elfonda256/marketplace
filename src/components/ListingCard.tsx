@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/browse";
 import { getImageUrl, type Listing } from "@/lib/listings";
+import { SoldBadge } from "./SoldBadge";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   return (
@@ -17,6 +18,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
           sizes="(min-width: 1280px) 240px, (min-width: 640px) 30vw, 50vw"
           className="object-cover transition group-hover:scale-105"
         />
+        {listing.status === "sold" && (
+          <span className="absolute top-2 left-2">
+            <SoldBadge />
+          </span>
+        )}
       </div>
       <p className="mt-2 font-bold text-ink">{formatPrice(listing.price)}</p>
       <p className="line-clamp-2 text-sm text-ink">{listing.title}</p>

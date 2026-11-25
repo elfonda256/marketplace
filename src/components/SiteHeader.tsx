@@ -8,14 +8,22 @@ export function SiteHeader() {
           <span aria-hidden="true" className="grid size-8 place-items-center rounded-lg bg-brand text-white">
             M
           </span>
-          Marketplace
+          <span className="hidden sm:inline">Marketplace</span>
         </Link>
-        <Link
-          href="/create"
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        >
-          + Create listing
-        </Link>
+        <nav aria-label="Main" className="flex items-center gap-2">
+          <Link
+            href="/sell"
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-brand"
+          >
+            Get paid
+          </Link>
+          <Link
+            href="/create"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            + Create listing
+          </Link>
+        </nav>
       </div>
     </header>
   );

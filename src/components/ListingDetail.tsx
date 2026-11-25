@@ -5,7 +5,9 @@ import { buildBrowseHref, formatPrice, isUuid } from "@/lib/browse";
 import { categoryLabel } from "@/lib/categories";
 import { fetchListing, getImageUrl } from "@/lib/listings";
 import { formatRelativeTime } from "@/lib/time";
+import { SoldBadge } from "./SoldBadge";
 import { MessageSellerForm } from "./MessageSellerForm";
+import { PurchasePanel } from "./PurchasePanel";
 
 export async function ListingDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,12 +36,17 @@ export async function ListingDetail({ params }: { params: Promise<{ id: string }
             {categoryLabel(listing.category)}
           </Link>
           <h1 className="mt-1 text-2xl font-bold break-words text-ink">{listing.title}</h1>
-          <p className="mt-1 text-xl font-semibold text-ink">{formatPrice(listing.price)}</p>
+          <p className="mt-1 flex items-center gap-2 text-xl font-semibold text-ink">
+            {formatPrice(listing.price)}
+            {listing.status === "sold" && <SoldBadge />}
+          </p>
           <p className="mt-1 text-sm text-muted">
             Listed <time dateTime={listing.created_at}>{formatRelativeTime(listing.created_at)}</time> in{" "}
             {listing.location}
           </p>
         </div>
+
+        <PurchasePanel listing={listing} />
 
         <section>
           <h2 className="font-bold text-ink">Details</h2>
@@ -55,7 +62,7 @@ export async function ListingDetail({ params }: { params: Promise<{ id: string }
           </a>
         </section>
 
-        <MessageSellerForm listingId={listing.id} />
+        {listing.status === "available" && <MessageSellerForm listingId={listing.id} />}
       </div>
     </article>
   );

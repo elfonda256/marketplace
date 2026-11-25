@@ -13,6 +13,8 @@ export type Listing = {
   seller_email: string;
   location: string;
   image_path: string;
+  status: "available" | "sold";
+  sold_at: string | null;
   created_at: string;
 };
 
