@@ -58,10 +58,11 @@ async function OrderSummary({ searchParams }: { searchParams: Promise<Params> })
       <dl className="grid grid-cols-[1fr_auto] gap-y-2 rounded-lg border border-line p-4 text-sm">
         <dt className="text-muted">You paid</dt>
         <dd className="text-right font-semibold text-ink">{formatCents(total, currency)}</dd>
-        <dt className="text-muted">Seller receives</dt>
+        <dt className="text-muted">Seller&apos;s share</dt>
         <dd className="text-right text-ink">{formatCents(sellerPayoutCents(total), currency)}</dd>
         <dt className="text-muted">Marketplace fee</dt>
         <dd className="text-right text-ink">{formatCents(platformFeeCents(total), currency)}</dd>
+        <dd className="col-span-2 text-xs text-muted">Stripe&apos;s processing fee is paid from the seller&apos;s share.</dd>
       </dl>
 
       <p className="text-sm text-muted">
