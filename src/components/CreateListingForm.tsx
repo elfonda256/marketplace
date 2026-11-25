@@ -26,6 +26,7 @@ export function CreateListingForm() {
   const [photo, setPhoto] = useState<{ file: File; previewUrl: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   function update(field: keyof ListingForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -59,6 +60,13 @@ export function CreateListingForm() {
     setError(null);
     try {
       const id = await createListing(result.value, photo.file);
+      // Next.js keeps visited pages mounted in the background, so reset the form
+      // before leaving; otherwise coming back shows a locked "Publishing..." form.
+      URL.revokeObjectURL(photo.previewUrl);
+      setForm(EMPTY_FORM);
+      setPhoto(null);
+      setFileInputKey((key) => key + 1);
+      setIsSaving(false);
       router.push(`/item/${id}`);
     } catch {
       setIsSaving(false);
@@ -83,6 +91,7 @@ export function CreateListingForm() {
             </span>
           )}
           <input
+            key={fileInputKey}
             id="photo"
             type="file"
             accept={ACCEPTED_PHOTO_TYPES}
